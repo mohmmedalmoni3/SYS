@@ -1,0 +1,26 @@
+# dependencies
+node_modules/
+.npm-cache/
+.pnpm-store/
+
+# next
+.next/
+out/
+build/
+next-env.d.ts
+*.tsbuildinfo
+
+# env
+.env
+.env.local
+.env*.local
+
+# runtime demo database
+.data/
+*.log
+.chrome-*/
+.shots/
+
+# os
+.DS_Store
+Thumbs.db

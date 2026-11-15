@@ -1,0 +1,726 @@
+// ─────────────────────────────────────────────────────────────
+//  TECTNAL — Prisma Schema
+//  PostgreSQL · Auth.js v5 · Dynamic RBAC · Soft delete · Indexes
+// ─────────────────────────────────────────────────────────────
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ═══════════════════════════ AUTH ═══════════════════════════
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String?
+  bio           String?
+  title         String?
+  department    String?
+  phone         String?
+  location      String?
+  skills        String[]  @default([])
+  points        Int       @default(0)
+  level         Int       @default(1)
+  status        MemberStatus @default(ACTIVE)
+  joinedAt      DateTime  @default(now())
+  lastActiveAt  DateTime?
+  roleId        String?
+  role          Role?     @relation(fields: [roleId], references: [id], onDelete: SetNull)
+  widgetLayout  Json?
+  deletedAt     DateTime?
+
+  accounts        Account[]
+  sessions        Session[]
+  projectsOwned   Project[]        @relation("ProjectOwner")
+  projectMembers  ProjectMember[]
+  tasksAssigned   Task[]           @relation("TaskAssignee")
+  tasksCreated    Task[]           @relation("TaskCreator")
+  timeEntries     TimeEntry[]
+  proposals       Proposal[]       @relation("ProposalAuthor")
+  proposalVotes   ProposalVote[]
+  comments        Comment[]
+  meetingsHosted  Meeting[]        @relation("MeetingHost")
+  attendances     Attendance[]
+  achievements    Achievement[]
+  badges          UserBadge[]
+  pointsLedger    PointTransaction[]
+  articles        Article[]        @relation("ArticleAuthor")
+  files           Asset[]          @relation("AssetUploader")
+  channelMembers  ChannelMember[]
+  messages        Message[]        @relation("MessageAuthor")
+  announcements   Announcement[]
+  notifications   Notification[]   @relation("NotificationRecipient")
+  auditLogs       AuditLog[]       @relation("AuditActor")
+  invitationsSent Invitation[]     @relation("InvitationSender")
+  achievementsGiven Achievement[]  @relation("AchievementGiver")
+
+  @@index([roleId])
+  @@index([status])
+  @@index([deletedAt])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ═══════════════════════ RBAC ═══════════════════════
+
+model Role {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  nameEn      String
+  description String?
+  color       String   @default("#7C5CFF")
+  icon        String   @default("shield")
+  level       Int      @default(1)
+  isSystem    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  permissions RolePermission[]
+  users       User[]
+  assets      Asset[]
+
+  @@index([level])
+}
+
+model Permission {
+  id          String  @id @default(cuid())
+  key         String  @unique
+  label       String
+  labelEn     String
+  group       String
+  description String?
+
+  roles RolePermission[]
+
+  @@index([group])
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  grantedAt    DateTime @default(now())
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@index([permissionId])
+}
+
+// ═══════════════════════ PROJECTS ═══════════════════════
+
+model Project {
+  id          String        @id @default(cuid())
+  code        String        @unique
+  name        String
+  description String
+  status      ProjectStatus @default(PLANNING)
+  priority    Priority      @default(MEDIUM)
+  progress    Int           @default(0)
+  budget      Decimal?      @db.Decimal(12, 2)
+  spent       Decimal?      @db.Decimal(12, 2)
+  color       String        @default("#7C5CFF")
+  tags        String[]      @default([])
+  startDate   DateTime
+  dueDate     DateTime
+  completedAt DateTime?
+  ownerId     String
+  owner       User          @relation("ProjectOwner", fields: [ownerId], references: [id])
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  deletedAt   DateTime?
+
+  members    ProjectMember[]
+  milestones Milestone[]
+  tasks      Task[]
+  proposals  Proposal[]
+  assets     Asset[]
+  comments   Comment[]
+  meetings   Meeting[]
+
+  @@index([status])
+  @@index([ownerId])
+  @@index([dueDate])
+  @@index([deletedAt])
+}
+
+model ProjectMember {
+  id        String   @id @default(cuid())
+  projectId String
+  userId    String
+  role      String   @default("عضو")
+  joinedAt  DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@index([userId])
+}
+
+model Milestone {
+  id        String          @id @default(cuid())
+  projectId String
+  title     String
+  description String?
+  dueDate   DateTime
+  status    MilestoneStatus @default(PENDING)
+  order     Int             @default(0)
+  project   Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+}
+
+// ═══════════════════════ PROPOSALS ═══════════════════════
+
+model Proposal {
+  id          String         @id @default(cuid())
+  title       String
+  description String
+  category    String
+  impact      Int            @default(3)
+  effort      Int            @default(3)
+  difficulty  Int            @default(3)
+  priorityScore Int          @default(0)
+  status      ProposalStatus @default(NEW)
+  estimatedCost Decimal?     @db.Decimal(12, 2)
+  resources   String[]       @default([])
+  authorId    String
+  author      User           @relation("ProposalAuthor", fields: [authorId], references: [id])
+  projectId   String?
+  project     Project?       @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  deletedAt   DateTime?
+
+  votes    ProposalVote[]
+  comments Comment[]
+
+  @@index([status])
+  @@index([authorId])
+  @@index([priorityScore])
+}
+
+model ProposalVote {
+  id         String   @id @default(cuid())
+  proposalId String
+  userId     String
+  value      Int      @default(1) // 1 = up, -1 = down
+  reason     String?
+  createdAt  DateTime @default(now())
+
+  proposal Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([proposalId, userId])
+  @@index([proposalId])
+}
+
+// ═══════════════════════ TASKS ═══════════════════════
+
+model Task {
+  id          String     @id @default(cuid())
+  title       String
+  description String?
+  status      TaskStatus @default(TODO)
+  priority    Priority   @default(MEDIUM)
+  projectId   String?
+  assigneeId  String?
+  createdById String
+  meetingId   String?
+  dueDate     DateTime?
+  startDate   DateTime?
+  estimate    Int?       // minutes
+  order       Int        @default(0)
+  completedAt DateTime?
+  recurrence  String?    // none | daily | weekly | monthly
+  labels      String[]   @default([])
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  deletedAt   DateTime?
+
+  project    Project?   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assignee   User?      @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  createdBy  User       @relation("TaskCreator", fields: [createdById], references: [id])
+  meeting    Meeting?   @relation("MeetingTasks", fields: [meetingId], references: [id], onDelete: SetNull)
+  subtasks   Subtask[]
+  timeEntries TimeEntry[]
+  comments   Comment[]
+  blockedBy  TaskDependency[] @relation("DependentTask")
+  blocks     TaskDependency[] @relation("BlockingTask")
+
+  @@index([status, order])
+  @@index([projectId])
+  @@index([assigneeId])
+  @@index([dueDate])
+}
+
+model Subtask {
+  id        String   @id @default(cuid())
+  taskId    String
+  title     String
+  done      Boolean  @default(false)
+  order     Int      @default(0)
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+}
+
+model TaskDependency {
+  id            String @id @default(cuid())
+  taskId        String
+  dependsOnId   String
+  task          Task   @relation("DependentTask", fields: [taskId], references: [id], onDelete: Cascade)
+  dependsOn     Task   @relation("BlockingTask", fields: [dependsOnId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, dependsOnId])
+  @@index([dependsOnId])
+}
+
+model TimeEntry {
+  id        String   @id @default(cuid())
+  taskId    String
+  userId    String
+  minutes   Int
+  note      String?
+  startedAt DateTime
+  endedAt   DateTime?
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@index([userId])
+}
+
+// ═══════════════════════ MEETINGS ═══════════════════════
+
+model Meeting {
+  id          String        @id @default(cuid())
+  title       String
+  description String?
+  type        String        @default("اجتماع دوري")
+  status      MeetingStatus @default(SCHEDULED)
+  startsAt    DateTime
+  endsAt      DateTime
+  location    String?
+  meetUrl     String?
+  hostId      String
+  projectId   String?
+  minutes     String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  host        User       @relation("MeetingHost", fields: [hostId], references: [id])
+  project     Project?   @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  agenda      AgendaItem[]
+  attendances Attendance[]
+  tasksCreated Task[]    @relation("MeetingTasks")
+
+  @@index([startsAt])
+  @@index([status])
+}
+
+model AgendaItem {
+  id        String  @id @default(cuid())
+  meetingId String
+  title     String
+  duration  Int     @default(10)
+  order     Int     @default(0)
+  notes     String?
+  meeting   Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  @@index([meetingId])
+}
+
+model Attendance {
+  id        String           @id @default(cuid())
+  meetingId String
+  userId    String
+  status    AttendanceStatus @default(ABSENT)
+  note      String?
+  checkedAt DateTime?
+
+  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([meetingId, userId])
+  @@index([userId])
+}
+
+// ═══════════════════════ GAMIFICATION ═══════════════════════
+
+model Achievement {
+  id          String   @id @default(cuid())
+  userId      String
+  title       String
+  description String?
+  points      Int      @default(10)
+  icon        String   @default("star")
+  rarity      String   @default("common")
+  earnedAt    DateTime @default(now())
+  awardedById String?
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  awardedBy   User?    @relation("AchievementGiver", fields: [awardedById], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+}
+
+model Badge {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  name        String
+  description String
+  icon        String
+  color       String   @default("#7C5CFF")
+  rarity      String   @default("common")
+  criteria    String?
+  createdAt   DateTime @default(now())
+
+  users UserBadge[]
+}
+
+model UserBadge {
+  userId   String
+  badgeId  String
+  earnedAt DateTime @default(now())
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge    Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@id([userId, badgeId])
+}
+
+model PointTransaction {
+  id        String   @id @default(cuid())
+  userId    String
+  points    Int
+  reason    String
+  source    String   @default("achievement")
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+// ═══════════════════════ KNOWLEDGE ═══════════════════════
+
+model Article {
+  id          String        @id @default(cuid())
+  slug        String        @unique
+  title       String
+  excerpt     String
+  content     String        // Tiptap HTML
+  coverColor  String        @default("#7C5CFF")
+  category    String
+  tags        String[]      @default([])
+  readTime    Int           @default(5)
+  status      ArticleStatus @default(PUBLISHED)
+  views       Int           @default(0)
+  authorId    String
+  author      User          @relation("ArticleAuthor", fields: [authorId], references: [id])
+  publishedAt DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  deletedAt   DateTime?
+
+  @@index([category])
+  @@index([status])
+}
+
+// ═══════════════════════ FILES ═══════════════════════
+
+model Folder {
+  id        String   @id @default(cuid())
+  name      String
+  parentId  String?
+  color     String   @default("#7C5CFF")
+  createdAt DateTime @default(now())
+  parent    Folder?  @relation("FolderTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children  Folder[] @relation("FolderTree")
+  assets    Asset[]
+
+  @@index([parentId])
+}
+
+model Asset {
+  id          String   @id @default(cuid())
+  name        String
+  url         String
+  kind        String   @default("document")
+  size        Int      @default(0)
+  mimeType    String?
+  folderId    String?
+  projectId   String?
+  roleId      String?
+  uploaderId  String
+  createdAt   DateTime @default(now())
+  deletedAt   DateTime?
+
+  folder   Folder?  @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  project  Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  role     Role?    @relation(fields: [roleId], references: [id], onDelete: SetNull)
+  uploader User     @relation("AssetUploader", fields: [uploaderId], references: [id])
+
+  @@index([folderId])
+  @@index([projectId])
+}
+
+// ═══════════════════════ COMMS ═══════════════════════
+
+model Channel {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  icon        String   @default("hash")
+  isPrivate   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  members  ChannelMember[]
+  messages Message[]
+}
+
+model ChannelMember {
+  channelId String
+  userId    String
+  role      String   @default("member")
+  joinedAt  DateTime @default(now())
+  channel   Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([channelId, userId])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  channelId String
+  authorId  String
+  body      String
+  createdAt DateTime @default(now())
+  editedAt  DateTime?
+  channel   Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  author    User     @relation("MessageAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([channelId, createdAt])
+}
+
+model Announcement {
+  id        String   @id @default(cuid())
+  title     String
+  body      String
+  pinned    Boolean  @default(false)
+  priority  Priority @default(MEDIUM)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@index([pinned, createdAt])
+}
+
+// ═══════════════════════ SYSTEM ═══════════════════════
+
+model Comment {
+  id         String   @id @default(cuid())
+  entityType String
+  entityId   String
+  taskId     String?
+  projectId  String?
+  proposalId String?
+  authorId   String
+  body       String
+  parentId   String?
+  mentions   String[] @default([])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  deletedAt  DateTime?
+
+  author   User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parent   Comment?  @relation("CommentTree", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  Comment[] @relation("CommentTree")
+  task     Task?     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  project  Project?  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  proposal Proposal? @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+
+  @@index([entityType, entityId])
+  @@index([authorId])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType @default(INFO)
+  title     String
+  body      String
+  href      String?
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  user      User             @relation("NotificationRecipient", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read, createdAt])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  action     AuditAction
+  entityType String
+  entityId   String?
+  summary    String
+  metadata   Json?
+  ip         String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+  actor      User?    @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([actorId])
+  @@index([createdAt])
+  @@index([entityType])
+}
+
+model Invitation {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  email     String?
+  roleId    String
+  invitedById String
+  status    String   @default("pending")
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  invitedBy User     @relation("InvitationSender", fields: [invitedById], references: [id])
+
+  @@index([code])
+}
+
+model Setting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}
+
+// ═══════════════════════ ENUMS ═══════════════════════
+
+enum MemberStatus {
+  ACTIVE
+  PENDING
+  SUSPENDED
+  ALUMNI
+}
+
+enum ProjectStatus {
+  PLANNING
+  ACTIVE
+  ON_HOLD
+  COMPLETED
+  ARCHIVED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum TaskStatus {
+  BACKLOG
+  TODO
+  IN_PROGRESS
+  REVIEW
+  DONE
+}
+
+enum ProposalStatus {
+  NEW
+  UNDER_REVIEW
+  ACCEPTED
+  REJECTED
+  CONVERTED
+}
+
+enum MilestoneStatus {
+  PENDING
+  IN_PROGRESS
+  DONE
+}
+
+enum MeetingStatus {
+  SCHEDULED
+  LIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum AttendanceStatus {
+  PRESENT
+  LATE
+  ABSENT
+  EXCUSED
+}
+
+enum NotificationType {
+  INFO
+  SUCCESS
+  WARNING
+  DANGER
+  MENTION
+  ASSIGNMENT
+  DEADLINE
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  RANK_CHANGE
+  EXPORT
+  APPROVE
+  REJECT
+}
+
+enum ArticleStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}

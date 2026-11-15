@@ -196,37 +196,30 @@ prisma/
 
 ---
 
-## ١٠. التحول إلى PostgreSQL
+## ١٠. تخزين Neon
 
-طبقة العرض الحالية تعمل على `src/server/db.ts` (JSON) لتشغيل فوري بلا بنية تحتية. للانتقال:
+يعمل التطبيق محلياً على ملف JSON داخل `.data`. للتخزين الدائم على Neon، عيّن `DATABASE_PROVIDER=neon` و`DATABASE_URL` إلى رابط PostgreSQL، ثم نفّذ `npm run db:push`. يحفظ التطبيق حالة مساحة العمل في سجل JSONB داخل جدول `Setting` ويقفل السجل أثناء التعديلات حتى تبقى الكتابات متسقة بين وظائف Vercel.
 
-1. أنشئ قاعدة بيانات على **Neon** أو **Supabase** وضع رابطها في `DATABASE_URL`.
-2. `npm run db:push` ثم `npm run db:seed`.
-3. استبدل دوال القراءة في `src/server/repository.ts` باستعلامات `prisma` (نفس الأشكال المُعادة `ProjectView`, `TaskView`…).
-4. استبدل `mutateDb` في `src/server/actions.ts` بـ `prisma.$transaction`.
-
-> مخطط قاعدة البيانات كامل وجاهز (٣٥ جدولاً، Enums، فهارس، حذف ناعم، سجل تدقيق، RBAC، صلاحيات الملفات).
+يحتوي `prisma/schema.prisma` أيضاً على المخطط العلائقي الكامل للكيانات. التخزين الحالي على Neon يحافظ على واجهة البيانات الحالية دون تحويل كل إجراء إلى استعلام مستقل؛ يمكن ترحيل الكيانات إلى الجداول العلائقية تدريجياً عند الحاجة للتوسع.
 
 ---
 
 ## ١١. النشر (Vercel + Neon)
 
 ```bash
-# 1) قاعدة البيانات
-neon projects create tectnal
-# انسخ DATABASE_URL إلى Vercel
+# 1) أنشئ PostgreSQL على Neon ثم أضف في Vercel:
+DATABASE_PROVIDER=neon
+DATABASE_URL=<Neon pooled connection string>
 
 # 2) الأسرار
 npx auth secret                 # AUTH_SECRET
-# AUTH_URL=https://your-domain
-# AUTH_TRUST_HOST=true
+# أضف AUTH_SECRET من npx auth secret إلى Vercel
 
-# 3) النشر
-vercel --prod
+# 3) انشر فرع main من Vercel
 ```
 
-- أضف `postinstall: prisma generate` في بيئة الإنتاج.
-- أنشئ مجلد `.data` على تخزين دائم، أو انتقل إلى Prisma كما في القسم ١٠.
+- يجهّز `postinstall` Prisma Client تلقائياً في بيئة الإنتاج.
+- ينشئ التطبيق سجل الحالة الأول تلقائياً عند أول استخدام. لا تشغّل `npm run db:seed` على قاعدة تحتوي بيانات؛ ملف Seed يمسح الجداول قبل إعادة تعبئتها.
 - Pusher اختياري: أضف المفاتيح، ثم استبدل الاستطلاع في `useRealtime` بقناة `pusher-js`.
 - رفع الملفات: وصّل زر الرفع في `/files` بـ UploadThing أو S3 signed URLs.
 
@@ -236,7 +229,7 @@ vercel --prod
 
 | العنصر | الحالة |
 | --- | --- |
-| البيانات | طبقة JSON محلية مُغذّاة، مع مخطط Prisma كامل وSeed جاهز |
+| البيانات | ملف JSON محلياً؛ تخزين JSONB دائم على Neon عند `DATABASE_PROVIDER=neon`؛ ومخطط Prisma علائقي كامل متاح |
 | الإشعارات اللحظية | Polling ذكي كل ٤٥ ثانية (جاهز للتبديل إلى Pusher) |
 | رفع الملفات | واجهة كاملة + معاينة؛ التخزين الفعلي يحتاج مفاتيح S3/UploadThing |
 | الترجمة | العربية كاملة، والإنجليزية لهيكل الواجهة (القوائم، الشريط، الأوامر) — قابل للتوسع عبر `next-intl` |

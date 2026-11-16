@@ -14,4 +14,17 @@ await cp(path.join(root, ".next", "static"), path.join(target, ".next", "static"
 });
 await cp(path.join(root, "public"), path.join(target, "public"), { recursive: true });
 
+for (const filename of [
+  ".env",
+  ".env.local",
+  ".env.development",
+  ".env.development.local",
+  ".env.production",
+  ".env.production.local",
+  ".env.test",
+  ".env.test.local",
+]) {
+  await rm(path.join(target, filename), { force: true });
+}
+
 console.log("Prepared standalone Next.js files for the desktop app.");

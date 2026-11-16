@@ -13,7 +13,7 @@ import type { Database } from "./data/types";
  * serialises writes so concurrent server actions cannot interleave.
  */
 
-const DB_DIR = path.join(process.cwd(), ".data");
+const DB_DIR = process.env.TECTNAL_DATA_DIR || path.join(process.cwd(), ".data");
 const DB_FILE = path.join(DB_DIR, "tectnal.json");
 
 let cache: Database | null = null;

@@ -64,6 +64,18 @@ npm run typecheck    # فحص TypeScript Strict
 npm run fonts        # نسخ الخطوط إلى public/fonts
 ```
 
+### تطبيق سطح المكتب على Windows
+
+يعمل التطبيق كبرنامج Windows مستقل باستخدام Electron، ويشغّل نسخة Next.js محلية داخل نافذته. بيانات كل مستخدم تُحفظ في مجلد بيانات التطبيق داخل حساب Windows ولا تُكتب داخل مجلد التثبيت.
+
+```bash
+npm install
+npm run desktop:dev   # تشغيل نسخة سطح المكتب أثناء التطوير
+npm run build:desktop # إنشاء مثبّت Windows في release/
+```
+
+بعد إنشاء المثبّت، شغّل `release/TECTNAL-1.0.0-Setup.exe`. بيانات التطبيق ومفتاح الجلسات المحلي يبقيان محفوظين في مجلد بيانات TECTNAL للمستخدم. لا يحتاج تطبيق سطح المكتب إلى Neon أو اتصال خارجي بقاعدة بيانات.
+
 ### أوامر قاعدة البيانات (PostgreSQL)
 
 ```bash

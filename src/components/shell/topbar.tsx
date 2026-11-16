@@ -109,64 +109,73 @@ export function Topbar({
 
   return (
     <header className="sticky top-3 z-30 mb-5 px-3 lg:px-0">
-      <div className="glass flex h-14 items-center gap-2 rounded-2xl px-3 shadow-[0_20px_50px_-35px_rgba(0,0,0,0.9)]">
-        <div className="flex min-w-0 items-center gap-2">
-          <span className="hidden size-2 rounded-full bg-primary-2 shadow-[0_0_10px_var(--primary-2)] sm:block" />
-          <div className="min-w-0 max-w-[9.5rem] sm:max-w-none">
-            <div className="kicker hidden text-[0.52rem] lg:block">WORKSPACE / {title}</div>
-            <h2 className="truncate font-display text-[0.8rem] font-semibold sm:text-sm">{title}</h2>
+      <div className="glass flex min-h-14 items-center gap-1.5 rounded-2xl px-2.5 py-2 shadow-[0_20px_50px_-35px_rgba(0,0,0,0.9)] sm:gap-2.5 sm:px-3 lg:min-h-16 lg:gap-3">
+        <div className="flex min-w-0 shrink-0 items-center gap-2 sm:gap-2.5">
+          <span className="hidden size-1.5 rounded-full bg-primary-2 shadow-[0_0_10px_var(--primary-2)] sm:block" />
+          <div className="min-w-0 max-w-[6.5rem] sm:max-w-[9rem] lg:max-w-[12rem]">
+            <div className="kicker hidden text-[0.5rem] tracking-[0.18em] xl:block">WORKSPACE</div>
+            <h2 className="truncate font-display text-[0.78rem] font-semibold sm:text-sm">{title}</h2>
           </div>
         </div>
 
         <button
           type="button"
           onClick={() => palette.setOpen(true)}
-          className="mx-auto flex size-9 shrink-0 items-center justify-center gap-2 rounded-xl border border-line bg-[color-mix(in_oklab,var(--fg)_4%,transparent)] px-0 text-[0.72rem] text-muted transition hover:border-[color-mix(in_oklab,var(--primary)_40%,transparent)] hover:text-fg sm:h-9 sm:w-full sm:max-w-md sm:justify-start sm:px-3"
+          className="flex size-9 min-w-9 flex-1 items-center justify-center gap-2 rounded-xl border border-line bg-[color-mix(in_oklab,var(--fg)_4%,transparent)] px-0 text-[0.72rem] text-muted transition hover:border-[color-mix(in_oklab,var(--primary)_40%,transparent)] hover:text-fg sm:h-10 sm:justify-start sm:px-3 lg:max-w-[36rem]"
           aria-label={t("search")}
         >
           <Search className="size-3.5" />
-          <span className="hidden flex-1 text-start sm:block">{t("search")}</span>
+          <span className="hidden min-w-0 flex-1 truncate text-start sm:block">{t("search")}</span>
           <kbd className="mono ms-auto hidden items-center gap-0.5 rounded-md border border-line px-1.5 py-0.5 text-[0.55rem] sm:flex">
             <Command className="size-2.5" />K
           </kbd>
         </button>
 
-        <div className="hidden items-center gap-2 rounded-xl border border-line px-2.5 py-1.5 md:flex">
+        <div className="hidden shrink-0 items-center gap-2 rounded-xl border border-line bg-[color-mix(in_oklab,var(--fg)_3%,transparent)] px-2.5 py-2 xl:flex">
           <span className="live-dot" />
           <span className="mono text-[0.62rem] text-muted">
             {mounted && now ? `${formatWeekday(now)} · ${formatTime(now)}` : "--:--"}
           </span>
         </div>
 
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={toggleLocale}
-          aria-label={t("language")}
-          className="hidden sm:inline-flex"
-        >
-          <Globe className="size-4" />
-          <span className="mono absolute -bottom-0.5 text-[0.45rem]">{locale.toUpperCase()}</span>
-        </Button>
+        <div className="flex shrink-0 items-center gap-0.5 rounded-xl border border-line bg-[color-mix(in_oklab,var(--fg)_3%,transparent)] p-0.5 sm:gap-1 sm:p-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleLocale}
+            aria-label={t("language")}
+            className="relative hidden size-8 rounded-lg sm:inline-flex"
+          >
+            <Globe className="size-4" />
+            <span className="mono absolute -bottom-0.5 text-[0.45rem]">{locale.toUpperCase()}</span>
+          </Button>
 
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-          aria-label={t("theme")}
-        >
-          {mounted && resolvedTheme === "light" ? <Sun className="size-4" /> : <Moon className="size-4" />}
-        </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+            aria-label={t("theme")}
+            className="size-8 rounded-lg"
+          >
+            {mounted && resolvedTheme === "light" ? <Sun className="size-4" /> : <Moon className="size-4" />}
+          </Button>
 
-        <Button variant="ghost" size="icon" onClick={toggleSound} aria-label="أصوات الواجهة" className="hidden sm:inline-flex">
-          {soundEnabled ? <Volume2 className="size-4" /> : <VolumeX className="size-4" />}
-        </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleSound}
+            aria-label="أصوات الواجهة"
+            className="hidden size-8 rounded-lg sm:inline-flex"
+          >
+            {soundEnabled ? <Volume2 className="size-4" /> : <VolumeX className="size-4" />}
+          </Button>
+        </div>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="relative grid size-9 place-items-center rounded-lg text-muted transition hover:bg-[color-mix(in_oklab,var(--fg)_6%,transparent)] hover:text-fg"
+              className="relative grid size-9 shrink-0 place-items-center rounded-xl border border-transparent text-muted transition hover:border-line hover:bg-[color-mix(in_oklab,var(--fg)_5%,transparent)] hover:text-fg"
               aria-label={t("notifications")}
             >
               <Bell className="size-4" />
@@ -237,7 +246,7 @@ export function Topbar({
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="flex items-center gap-2 rounded-xl border border-line py-1 pe-2 ps-1 transition hover:border-line-strong"
+              className="flex h-10 shrink-0 items-center gap-2 rounded-xl border border-line bg-[color-mix(in_oklab,var(--fg)_3%,transparent)] py-1 pe-2.5 ps-1.5 transition hover:border-line-strong"
               aria-label={t("profile")}
             >
               <Avatar name={user.name} hue={user.avatarHue} size="sm" ring={user.role.color} />

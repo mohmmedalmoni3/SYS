@@ -1,5 +1,5 @@
 /**
- * Raw persistence shapes shared by the demo JSON store and the Prisma seed.
+ * Raw persistence shapes shared by the JSON store and Prisma seed.
  * Dates are ISO strings so the store can be serialized to disk safely.
  */
 

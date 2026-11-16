@@ -1,51 +1,52 @@
-import { roles, users } from "./core";
-import { milestones, projects } from "./projects";
-import { subtasks, taskDependencies, tasks, timeEntries } from "./tasks";
-import { comments, proposalVotes, proposals } from "./proposals";
-import { meetings } from "./meetings";
-import { achievements, badges, pointTransactions, userBadges } from "./gamification";
-import { articles, assets, folders } from "./content";
-import {
-  announcements,
-  auditLogs,
-  channels,
-  invitations,
-  messages,
-  notifications,
-  settings,
-} from "./comms";
+import { roles } from "./core";
 import type { Database } from "./types";
 
 export function createDatabase(): Database {
   return {
-    version: 1,
+    version: 2,
     seededAt: new Date().toISOString(),
     roles,
-    users,
-    projects,
-    milestones,
-    tasks,
-    subtasks,
-    timeEntries,
-    taskDependencies,
-    proposals,
-    proposalVotes,
-    comments,
-    meetings,
-    achievements,
-    badges,
-    userBadges,
-    pointTransactions,
-    articles,
-    folders,
-    assets,
-    channels,
-    messages,
-    announcements,
-    notifications,
-    auditLogs,
-    invitations,
-    settings,
+    users: [],
+    projects: [],
+    milestones: [],
+    tasks: [],
+    subtasks: [],
+    timeEntries: [],
+    taskDependencies: [],
+    proposals: [],
+    proposalVotes: [],
+    comments: [],
+    meetings: [],
+    achievements: [],
+    badges: [],
+    userBadges: [],
+    pointTransactions: [],
+    articles: [],
+    folders: [],
+    assets: [],
+    channels: [],
+    messages: [],
+    announcements: [],
+    notifications: [],
+    auditLogs: [],
+    invitations: [],
+    settings: {
+      committeeName: "لجنة التقنية والتحول الرقمي",
+      committeeNameEn: "Technology & Digital Transformation Committee",
+      tagline: "حيث تُدار الأفكار، وتُنجَز المشاريع، ويُصنَع الأثر.",
+      primaryColor: "#7C5CFF",
+      accentColor: "#22D3EE",
+      warmColor: "#FFB86B",
+      logoMark: "ت",
+      defaultTheme: "dark",
+      allowDiscordLogin: false,
+      weeklyDigest: true,
+      deadlineReminders: true,
+      mentionNotifications: true,
+      autoArchiveDays: 90,
+      defaultRoleId: "role_trainee",
+      fiscalYearStart: "يناير",
+    },
   };
 }
 

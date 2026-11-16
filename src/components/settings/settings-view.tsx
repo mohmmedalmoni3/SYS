@@ -11,12 +11,10 @@ import {
   KeyRound,
   Palette,
   Plus,
-  RotateCcw,
   Save,
   Shield,
   ShieldCheck,
   Sparkles,
-  Trash2,
   UserCog,
   Users,
 } from "lucide-react";
@@ -24,7 +22,7 @@ import { toast } from "sonner";
 import type { AuditEntryView, MemberView, RoleView } from "@/lib/types";
 import { PERMISSIONS, PERMISSION_GROUPS, permissionLabel } from "@/lib/permissions";
 import { cn, formatDate, relativeTime } from "@/lib/utils";
-import { createRole, resetDemoDatabase, updateMemberRole, updateRolePermissions, updateSettings } from "@/server/actions";
+import { createRole, updateMemberRole, updateRolePermissions, updateSettings } from "@/server/actions";
 import { Badge, RoleBadge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -100,7 +98,6 @@ export function SettingsView({
   const selectedRole = roles.find((role) => role.id === selectedRoleId) ?? roles[0];
   const [draftPermissions, setDraftPermissions] = useState<string[]>(selectedRole?.permissions ?? []);
   const [auditFilter, setAuditFilter] = useState("ALL");
-  const [dangerOpen, setDangerOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [brand, setBrand] = useState({
     committeeName: String(settings.committeeName ?? ""),
@@ -182,19 +179,6 @@ export function SettingsView({
     });
   }
 
-  function resetDemo() {
-    startTransition(async () => {
-      try {
-        await resetDemoDatabase();
-        toast.success("أُعيدت بيانات العرض التجريبية");
-        setDangerOpen(false);
-        router.refresh();
-      } catch (error) {
-        toast.error(error instanceof Error ? error.message : "تعذّر إعادة التعيين");
-      }
-    });
-  }
-
   function submitRole(formData: FormData) {
     startTransition(async () => {
       try {
@@ -234,7 +218,6 @@ export function SettingsView({
           <TabsTrigger value="branding">الهوية</TabsTrigger>
           <TabsTrigger value="notifications">الإشعارات</TabsTrigger>
           {canViewAudit ? <TabsTrigger value="audit">سجل التدقيق</TabsTrigger> : null}
-          {canDanger ? <TabsTrigger value="danger">منطقة الخطر</TabsTrigger> : null}
         </TabsList>
 
         <TabsContent value="roles">
@@ -613,53 +596,6 @@ export function SettingsView({
           </TabsContent>
         ) : null}
 
-        {canDanger ? (
-          <TabsContent value="danger">
-            <SpotlightCard className="border-danger/25 p-5">
-              <div className="flex items-center gap-2 text-danger">
-                <AlertTriangle className="size-4" />
-                <h2 className="font-display text-sm font-semibold">منطقة الخطر</h2>
-              </div>
-              <p className="mt-2 max-w-xl text-[0.62rem] leading-relaxed text-muted">
-                إعادة تعيين بيانات العرض تحذف كل التعديلات المحلية (مشاريع، مهام، اقتراحات، رسائل) وتعيد الحالة الأصلية.
-                هذا الإجراء لا يمكن التراجع عنه، متاح لرئيس اللجنة فقط.
-              </p>
-              <Dialog open={dangerOpen} onOpenChange={setDangerOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="danger" size="sm" className="mt-4">
-                    <RotateCcw className="size-3.5" /> إعادة تعيين بيانات العرض
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>تأكيد إعادة التعيين</DialogTitle>
-                    <DialogDescription>سيتم حذف كل التغييرات المحلية واستعادة البيانات التجريبية الأصلية.</DialogDescription>
-                  </DialogHeader>
-                  <div className="flex justify-end gap-2">
-                    <Button variant="ghost" size="sm" onClick={() => setDangerOpen(false)}>
-                      إلغاء
-                    </Button>
-                    <Button variant="danger" size="sm" onClick={resetDemo} loading={pending}>
-                      <Trash2 className="size-3.5" /> نعم، أعد التعيين
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-
-              <div className="mt-6 rounded-xl border border-line p-4">
-                <div className="flex items-center gap-2 text-[0.68rem] font-medium">
-                  <Shield className="size-3.5 text-muted" /> حالة النظام
-                </div>
-                <div className="mt-2 grid grid-cols-2 gap-2 text-[0.58rem] text-muted sm:grid-cols-4">
-                  <div>الرتب: <span className="num text-fg">{roles.length}</span></div>
-                  <div>الأعضاء: <span className="num text-fg">{members.length}</span></div>
-                  <div>سجلات التدقيق: <span className="num text-fg">{audit.length}</span></div>
-                  <div>وضع البيانات: <span className="text-fg">Demo JSON</span></div>
-                </div>
-              </div>
-            </SpotlightCard>
-          </TabsContent>
-        ) : null}
       </Tabs>
     </div>
   );

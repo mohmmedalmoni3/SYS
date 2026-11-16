@@ -727,9 +727,9 @@ export function DashboardView({ data }: { data: DashboardView }) {
       <div className="flex flex-wrap items-center justify-between gap-2 px-1 pt-2 text-[0.6rem] text-muted">
         <span className="flex items-center gap-1.5">
           <span className="live-dot" />
-          آخر تحديث {relativeTime(new Date().toISOString())} · البيانات محلية تجريبية
+          آخر تحديث {relativeTime(new Date().toISOString())} · البيانات الحالية
         </span>
-        <span className="mono">TECTNAL OS · v1.0</span>
+        <span className="mono">TECTNAL OS · v1.1</span>
       </div>
     </div>
   );

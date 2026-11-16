@@ -266,7 +266,7 @@ export function ReportsView({ memberPerformance, funnel, budget, attendanceByMee
       </SpotlightCard>
 
       <div className="flex flex-wrap items-center justify-between gap-2 text-[0.55rem] text-muted">
-        <span>تقرير تجريبي مبني على بيانات اللجنة الحالية · {new Date().toLocaleDateString("ar-EG")}</span>
+        <span>التقرير مبني على بيانات النظام الحالية · {new Date().toLocaleDateString("ar-EG")}</span>
         <span className="mono">TECTNAL ANALYTICS</span>
       </div>
     </div>

@@ -5,8 +5,8 @@
  *   npx prisma db push
  *   npx tsx prisma/seed.ts
  *
- * Seeds the full PostgreSQL schema with the same realistic Arabic
- * dataset used by the zero-infrastructure demo mode.
+ * Resets the PostgreSQL schema to an empty operational workspace.
+ * The primary administrator is created once through the first-run setup page.
  */
 import { PrismaClient, type Prisma } from "@prisma/client";
 import { createDatabase } from "../src/server/data";
@@ -452,7 +452,7 @@ async function main() {
     data: Object.entries(data.settings).map(([key, value]) => ({ key, value: json(value) })),
   });
 
-  console.log("✓ seed complete — 14 members, 8 projects, 40 tasks, 12 proposals");
+  console.log("✓ clean workspace initialized — no demo data or accounts");
 }
 
 main()

@@ -191,7 +191,7 @@ export function useUndoRedo<T>(initial: T) {
   };
 }
 
-/** useInfiniteList — client-side paging for long demo collections. */
+/** useInfiniteList — client-side paging for long collections. */
 export function useInfiniteList<T>(items: T[], pageSize = 12) {
   const [page, setPage] = useState(1);
   const visible = useMemo(() => items.slice(0, page * pageSize), [items, page, pageSize]);

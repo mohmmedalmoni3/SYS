@@ -2,8 +2,9 @@
 
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
+import { hash } from "bcryptjs";
 import { z } from "zod";
-import { mutateDb, resetDb } from "./db";
+import { mutateDb } from "./db";
 import { assertPermission } from "./guard";
 import { ALL_PERMISSIONS } from "@/lib/permissions";
 import type { AuditAction, Database } from "./data/types";
@@ -74,6 +75,59 @@ function parse<S extends z.ZodTypeAny>(schema: S, input: unknown): z.infer<S> {
     fail(result.error.issues[0]?.message ?? "بيانات غير صالحة");
   }
   return result.data;
+}
+
+/** The one-time initial setup may create exactly one full-access administrator. */
+export async function createInitialAdmin(input: {
+  name: string;
+  email: string;
+  password: string;
+}) {
+  rateLimit("initial-admin", 5, 60_000);
+  const data = parse(
+    z.object({
+      name: z.string().trim().min(2).max(80),
+      email: z.string().trim().email().max(254),
+      password: z.string().min(12).max(128),
+    }),
+    input,
+  );
+  const passwordHash = await hash(data.password, 12);
+  const email = data.email.toLowerCase();
+
+  const created = await mutateDb((db) => {
+    if (db.users.length > 0) return false;
+    if (!db.roles.some((role) => role.id === "role_chairman")) {
+      throw new Error("رتبة مسؤول النظام غير موجودة");
+    }
+
+    const now = new Date().toISOString();
+    db.users.push({
+      id: `u_${randomUUID()}`,
+      name: data.name,
+      email,
+      passwordHash,
+      image: null,
+      avatarHue: 42,
+      bio: "مسؤول النظام الرئيسي.",
+      title: "مسؤول النظام",
+      department: "الإدارة",
+      phone: "",
+      location: "",
+      skills: [],
+      points: 0,
+      level: 1,
+      status: "ACTIVE",
+      joinedAt: now,
+      lastActiveAt: now,
+      roleId: "role_chairman",
+    });
+    return true;
+  });
+
+  if (!created) return { ok: false, error: "تم إعداد مسؤول النظام مسبقاً" };
+  revalidatePath("/", "layout");
+  return { ok: true };
 }
 
 // ─────────────────────────── notifications ───────────────────────────
@@ -708,13 +762,6 @@ export async function updateSettings(values: Record<string, string | boolean | n
   revalidatePath("/settings");
   revalidatePath("/", "layout");
   return { ok: true };
-}
-
-export async function resetDemoDatabase() {
-  const user = await assertPermission("system.danger");
-  await resetDb();
-  revalidatePath("/", "layout");
-  return { ok: true, by: user.name };
 }
 
 // ─────────────────────────── comments ───────────────────────────

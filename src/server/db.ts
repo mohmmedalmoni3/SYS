@@ -5,7 +5,7 @@ import { createDatabase } from "./data";
 import type { Database } from "./data/types";
 
 /**
- * Local demo persistence.
+ * Local application persistence.
  *
  * The product ships with a PostgreSQL/Prisma schema (`prisma/schema.prisma`).
  * For a zero-infrastructure preview the same shape is persisted as a JSON
@@ -35,7 +35,7 @@ async function readFromDisk(): Promise<Database | null> {
   try {
     const raw = await readFile(DB_FILE, "utf8");
     const parsed = JSON.parse(raw) as Database;
-    if (!parsed.version || !Array.isArray(parsed.users)) return null;
+    if (parsed.version !== 2 || !Array.isArray(parsed.users)) return null;
     return parsed;
   } catch {
     return null;
@@ -52,7 +52,7 @@ async function persist(db: Database): Promise<void> {
 function readDatabaseState(value: Prisma.JsonValue | null | undefined): Database | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const candidate = value as unknown as Database;
-  return candidate.version && Array.isArray(candidate.users) ? candidate : null;
+  return candidate.version === 2 && Array.isArray(candidate.users) ? candidate : null;
 }
 
 async function ensureNeonState(): Promise<Database> {
@@ -63,7 +63,7 @@ async function ensureNeonState(): Promise<Database> {
   const initial = createDatabase();
   const row = await prisma.setting.upsert({
     where: { key: DATABASE_STATE_KEY },
-    update: {},
+    update: { value: initial as unknown as Prisma.InputJsonValue },
     create: { key: DATABASE_STATE_KEY, value: initial as unknown as Prisma.InputJsonValue },
   });
   const state = readDatabaseState(row.value);
@@ -119,25 +119,6 @@ export async function mutateDb<T>(mutator: (db: Database) => T | Promise<T>): Pr
   });
   writeChain = run.catch(() => undefined);
   return run as Promise<T>;
-}
-
-/** Wipes the local store — used by the settings "reset demo data" action. */
-export async function resetDb(): Promise<void> {
-  if (usesNeon()) {
-    const fresh = createDatabase();
-    await prisma.setting.upsert({
-      where: { key: DATABASE_STATE_KEY },
-      update: { value: fresh as unknown as Prisma.InputJsonValue },
-      create: { key: DATABASE_STATE_KEY, value: fresh as unknown as Prisma.InputJsonValue },
-    });
-    cache = null;
-    return;
-  }
-
-  cache = null;
-  const fresh = createDatabase();
-  cache = fresh;
-  await persist(fresh);
 }
 
 export const DB_PATH = DB_FILE;

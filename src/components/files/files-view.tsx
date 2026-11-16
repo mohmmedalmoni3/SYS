@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import {
   Archive,
   Download,
-  File,
   FileImage,
   FileText,
   Film,
@@ -85,7 +84,7 @@ export function FilesView({
             <Button
               size="sm"
               className="btn-shimmer"
-              onClick={() => toast.info("رفع الملفات جاهز للتوصيل بـ UploadThing/S3 — استخدم متغيرات البيئة.")}
+              onClick={() => toast.info("رفع الملفات غير متاح حتى يتم إعداد خدمة التخزين.")}
             >
               <Upload className="size-3.5" />
               رفع ملف
@@ -288,14 +287,9 @@ export function FilesView({
                 <div className="mt-1 truncate">{preview.projectName ?? "غير مرتبط"}</div>
               </div>
             </div>
-            <div className="mt-3 flex gap-2">
-              <Button className="flex-1" size="sm" onClick={() => toast.success("بدأ التنزيل (وضع تجريبي)")}>
-                <Download className="size-3.5" /> تنزيل
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => toast.info("الصلاحيات تُدار من لوحة الإدارة")}>
-                <File className="size-3.5" /> الصلاحيات
-              </Button>
-            </div>
+            <p className="mt-3 rounded-lg border border-line px-3 py-2 text-[0.58rem] text-muted">
+              تنزيل الملف يتطلب ربط خدمة التخزين.
+            </p>
           </DialogContent>
         </Dialog>
       ) : null}

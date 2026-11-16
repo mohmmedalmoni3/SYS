@@ -20,7 +20,7 @@ export const APP = {
   committee: "لجنة التقنية والتحول الرقمي",
   committeeEn: "Technology & Digital Transformation Committee",
   tagline: "حيث تُدار الأفكار، وتُنجَز المشاريع، ويُصنَع الأثر.",
-  version: "1.0.0",
+  version: "1.1.0",
 } as const;
 
 export type NavKey =

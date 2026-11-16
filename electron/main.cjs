@@ -8,6 +8,7 @@ const path = require("node:path");
 let nextServer;
 let mainWindow;
 let quitting = false;
+let shutdownRequested = false;
 let serverOutput = "";
 
 function rememberOutput(chunk) {
@@ -148,9 +149,25 @@ app.whenReady().then(async () => {
   }
 });
 
-app.on("before-quit", () => {
+app.on("before-quit", (event) => {
   quitting = true;
-  if (nextServer && nextServer.exitCode === null) nextServer.kill();
+  if (!nextServer || nextServer.exitCode !== null) return;
+
+  event.preventDefault();
+  if (shutdownRequested) return;
+  shutdownRequested = true;
+
+  const server = nextServer;
+  const forceStop = setTimeout(() => {
+    if (server.exitCode === null) server.kill("SIGKILL");
+  }, 4000);
+  forceStop.unref();
+
+  server.once("exit", () => {
+    clearTimeout(forceStop);
+    app.quit();
+  });
+  server.kill();
 });
 
 app.on("window-all-closed", () => app.quit());

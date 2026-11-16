@@ -1,6 +1,6 @@
 {
   "name": "tectnal",
-  "version": "1.1.1",
+  "version": "1.1.3",
   "private": true,
   "description": "TECTNAL — نظام إدارة لجنة تقنية متكامل",
   "scripts": {
@@ -89,6 +89,13 @@
       {
         "from": "desktop-dist/app",
         "to": "app-server"
+      },
+      {
+        "from": "desktop-dist/runtime-node-modules",
+        "to": "app-server/node_modules",
+        "filter": [
+          "**/*"
+        ]
       }
     ],
     "win": {
@@ -99,6 +106,7 @@
     "nsis": {
       "oneClick": false,
       "perMachine": false,
+      "include": "build/installer.nsh",
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true

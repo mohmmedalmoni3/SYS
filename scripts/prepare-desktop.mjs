@@ -5,10 +5,13 @@ import { fileURLToPath } from "node:url";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const source = path.join(root, ".next", "standalone");
 const target = path.join(root, "desktop-dist", "app");
+const runtimeModules = path.join(root, "desktop-dist", "runtime-node-modules");
 
 await rm(target, { recursive: true, force: true });
+await rm(runtimeModules, { recursive: true, force: true });
 await mkdir(target, { recursive: true });
 await cp(source, target, { recursive: true });
+await cp(path.join(source, "node_modules"), runtimeModules, { recursive: true });
 await cp(path.join(root, ".next", "static"), path.join(target, ".next", "static"), {
   recursive: true,
 });

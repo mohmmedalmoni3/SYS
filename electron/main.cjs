@@ -61,6 +61,9 @@ async function startNextServer() {
   const childEnvironment = {
     ...inheritedEnvironment,
     ELECTRON_RUN_AS_NODE: "1",
+    ...(packaged
+      ? { NODE_PATH: path.join(process.resourcesPath, "app.asar", "node_modules") }
+      : {}),
     NODE_ENV: packaged ? "production" : "development",
     HOSTNAME: "127.0.0.1",
     PORT: String(port),
